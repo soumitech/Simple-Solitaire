@@ -19,10 +19,8 @@ package de.tobiasbielefeld.solitaire.dialogs;
 
 import android.app.Dialog;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-
-import android.util.Log;
+import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -31,7 +29,6 @@ import android.widget.TextView;
 import java.util.Locale;
 
 import de.tobiasbielefeld.solitaire.R;
-import de.tobiasbielefeld.solitaire.ad.AdDialogInteractionListener;
 import de.tobiasbielefeld.solitaire.classes.CustomDialogFragment;
 import de.tobiasbielefeld.solitaire.ui.GameManager;
 
@@ -65,11 +62,9 @@ public class DialogWon extends CustomDialogFragment {
                     switch (which) {
                         case 0:
                             gameLogic.newGame();
-                            showInterstitialAd();
                             break;
                         case 1:
                             gameLogic.redeal();
-                            showInterstitialAd();
                             break;
                         case 2:
                             if (gameManager.hasLoaded) {
@@ -84,7 +79,6 @@ public class DialogWon extends CustomDialogFragment {
                 })
                 .setNegativeButton(R.string.game_cancel, (dialog, id) -> {
                     //just cancel
-                    showInterstitialAd();
                 });
 
         LinearLayout layoutScores = view.findViewById(R.id.dialog_won_layout_scores);
@@ -125,15 +119,5 @@ public class DialogWon extends CustomDialogFragment {
         outState.putLong(KEY_SCORE, score);
         outState.putLong(KEY_BONUS, bonus);
         outState.putLong(KEY_TOTAL, total);
-    }
-
-    private void showInterstitialAd() {
-        listener.onShowAd();
-    }
-
-    private AdDialogInteractionListener listener;
-
-    public void setAdDialogInteractionListener(AdDialogInteractionListener listener) {
-        this.listener = listener;
     }
 }

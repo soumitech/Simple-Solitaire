@@ -2,15 +2,15 @@ package de.tobiasbielefeld.solitaire.ui;
 
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Display;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,32 +19,16 @@ import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdSize;
-import com.google.android.gms.ads.AdView;
-import com.google.android.material.navigation.NavigationView;
-
 import java.util.ArrayList;
 
-import de.tobiasbielefeld.solitaire.MainApplication;
-import de.tobiasbielefeld.solitaire.ad.AdConfig;
 import de.tobiasbielefeld.solitaire.R;
 import de.tobiasbielefeld.solitaire.classes.CustomAppCompatActivity;
 import de.tobiasbielefeld.solitaire.ui.about.AboutActivity;
 import de.tobiasbielefeld.solitaire.ui.manual.Manual;
 import de.tobiasbielefeld.solitaire.ui.settings.Settings;
 
-import static de.tobiasbielefeld.solitaire.SharedData.GAME;
-import static de.tobiasbielefeld.solitaire.SharedData.bitmaps;
-import static de.tobiasbielefeld.solitaire.SharedData.lg;
-import static de.tobiasbielefeld.solitaire.SharedData.prefs;
-import static de.tobiasbielefeld.solitaire.helper.Preferences.DEFAULT_CURRENT_GAME;
+import static de.tobiasbielefeld.solitaire.SharedData.*;
+import static de.tobiasbielefeld.solitaire.helper.Preferences.*;
 
 public class GameSelector extends CustomAppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnTouchListener {
@@ -52,13 +36,6 @@ public class GameSelector extends CustomAppCompatActivity
     private TableLayout tableLayout;
     private int menuColumns;
     private ArrayList<Integer> indexes = new ArrayList<>();
-
-    private boolean initialLayoutComplete = false;
-    private AdView adView;
-    private FrameLayout ad_view_container;
-
-    private boolean hasShowLaunchAd = false;
-    private boolean hasStartedGame = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,39 +61,12 @@ public class GameSelector extends CustomAppCompatActivity
             int savedGame = prefs.getSavedCurrentGame();
 
             if (savedGame != DEFAULT_CURRENT_GAME) {
-                hasStartedGame = true;
                 Intent intent = new Intent(getApplicationContext(), GameManager.class);
                 intent.putExtra(GAME, savedGame);
                 startActivityForResult(intent, 0);
             }
         } else {
             prefs.saveCurrentGame(DEFAULT_CURRENT_GAME);
-        }
-
-        adView = new AdView(this);
-        ad_view_container = findViewById(R.id.ad_view_container);
-        ad_view_container.addView(adView);
-        // Since we're loading the banner based on the adContainerView size, we need to wait until this
-        // view is laid out before we can get the width.
-        ad_view_container.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-            if (!initialLayoutComplete) {
-                initialLayoutComplete = true;
-                loadBanner();
-            }
-        });
-
-    }
-
-    @Override
-    public void afterOnAdLoaded() {
-        if (!hasShowLaunchAd && !hasStartedGame) {
-            hasShowLaunchAd = true;
-            int appLaunchCount = getSharedPreferences(MainApplication.PREFS_LAUNCH_NAME, Context.MODE_PRIVATE)
-                    .getInt(MainApplication.PREFS_KEY_LAUNCH_COUNT, 0);
-            Log.d(INTERSTITIAL_AD_TAG, "launch count: " + appLaunchCount);
-            if (appLaunchCount > 5) {
-                showInterstitial();
-            }
         }
     }
 
@@ -218,58 +168,10 @@ public class GameSelector extends CustomAppCompatActivity
         prefs.saveCurrentGame(DEFAULT_CURRENT_GAME);
     }
 
-    /** Called when leaving the activity  */
-    @Override
-    protected void onPause() {
-        adView.pause();
-        super.onPause();
-    }
-
-    /** Called when returning to the activity  */
     @Override
     public void onResume() {
         super.onResume();
         loadGameList();
-        adView.resume();
-    }
-
-    /** Called before the activity is destroyed  */
-    @Override
-    protected void onDestroy() {
-        adView.destroy();
-        super.onDestroy();
-
-    }
-
-
-    private void loadBanner() {
-
-        adView.setAdUnitId(AdConfig.BANNER_AD_UNIT_ID);
-
-        adView.setAdSize(getAdSize());
-
-        // Create an ad request.
-        AdRequest adRequest = (new AdRequest.Builder()).build();
-
-        // Start loading the ad in the background.
-        adView.loadAd(adRequest);
-    }
-
-    private AdSize getAdSize() {
-        Display display = getWindowManager().getDefaultDisplay();
-        DisplayMetrics outMetrics = new DisplayMetrics();
-        display.getMetrics(outMetrics);
-
-        float density = outMetrics.density;
-
-        float adWidthPixels = ad_view_container.getWidth();
-
-        if (adWidthPixels == 0) {
-            adWidthPixels = outMetrics.widthPixels;
-        }
-
-        int adWidth = (int) (adWidthPixels / density);
-        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(this, adWidth);
     }
 
     /*

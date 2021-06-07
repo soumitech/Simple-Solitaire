@@ -19,9 +19,8 @@
 package de.tobiasbielefeld.solitaire.ui.about;
 
 import android.os.Bundle;
-import androidx.appcompat.app.ActionBar;
-import androidx.viewpager.widget.ViewPager;
-
+import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
 import android.view.MenuItem;
 
 import com.astuetz.PagerSlidingTabStrip;

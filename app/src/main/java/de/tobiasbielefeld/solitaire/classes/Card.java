@@ -149,7 +149,7 @@ public class Card {
      */
     public static void load() {
         List<Integer> list = prefs.getSavedCards();
-        if (list.isEmpty()) { return; }
+
         for (int i = 0; i < cards.length; i++) {
             switch (list.get(i)) {
                 case STATE_FACED_UP:

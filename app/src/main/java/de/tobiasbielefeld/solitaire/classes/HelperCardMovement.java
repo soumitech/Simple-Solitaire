@@ -21,7 +21,7 @@ package de.tobiasbielefeld.solitaire.classes;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import androidx.annotation.CallSuper;
+import android.support.annotation.CallSuper;
 
 import de.tobiasbielefeld.solitaire.ui.GameManager;
 
