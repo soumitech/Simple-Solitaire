@@ -24,6 +24,8 @@ import android.content.res.Configuration;
 import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -36,9 +38,23 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.initialization.InitializationStatus;
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+
 import java.util.Locale;
 
 import de.tobiasbielefeld.solitaire.R;
+import de.tobiasbielefeld.solitaire.ad.AdConfig;
+import de.tobiasbielefeld.solitaire.ad.AdDialogInteractionListener;
 import de.tobiasbielefeld.solitaire.classes.Card;
 import de.tobiasbielefeld.solitaire.classes.CardAndStack;
 import de.tobiasbielefeld.solitaire.classes.CustomAppCompatActivity;
@@ -65,9 +81,37 @@ import de.tobiasbielefeld.solitaire.ui.statistics.StatisticsActivity;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
-import static de.tobiasbielefeld.solitaire.SharedData.*;
-import static de.tobiasbielefeld.solitaire.classes.Stack.SpacingDirection.*;
-import static de.tobiasbielefeld.solitaire.helper.Preferences.*;
+import static de.tobiasbielefeld.solitaire.SharedData.GAME;
+import static de.tobiasbielefeld.solitaire.SharedData.RESTART_DIALOG;
+import static de.tobiasbielefeld.solitaire.SharedData.WON_DIALOG;
+import static de.tobiasbielefeld.solitaire.SharedData.animate;
+import static de.tobiasbielefeld.solitaire.SharedData.autoComplete;
+import static de.tobiasbielefeld.solitaire.SharedData.autoMove;
+import static de.tobiasbielefeld.solitaire.SharedData.cardHighlight;
+import static de.tobiasbielefeld.solitaire.SharedData.cards;
+import static de.tobiasbielefeld.solitaire.SharedData.currentGame;
+import static de.tobiasbielefeld.solitaire.SharedData.dealCards;
+import static de.tobiasbielefeld.solitaire.SharedData.ensureMovability;
+import static de.tobiasbielefeld.solitaire.SharedData.gameLogic;
+import static de.tobiasbielefeld.solitaire.SharedData.handlerTestAfterMove;
+import static de.tobiasbielefeld.solitaire.SharedData.handlerTestIfWon;
+import static de.tobiasbielefeld.solitaire.SharedData.hint;
+import static de.tobiasbielefeld.solitaire.SharedData.lg;
+import static de.tobiasbielefeld.solitaire.SharedData.max;
+import static de.tobiasbielefeld.solitaire.SharedData.min;
+import static de.tobiasbielefeld.solitaire.SharedData.movingCards;
+import static de.tobiasbielefeld.solitaire.SharedData.prefs;
+import static de.tobiasbielefeld.solitaire.SharedData.recordList;
+import static de.tobiasbielefeld.solitaire.SharedData.scores;
+import static de.tobiasbielefeld.solitaire.SharedData.sounds;
+import static de.tobiasbielefeld.solitaire.SharedData.stacks;
+import static de.tobiasbielefeld.solitaire.SharedData.stopUiUpdates;
+import static de.tobiasbielefeld.solitaire.SharedData.timer;
+import static de.tobiasbielefeld.solitaire.classes.Stack.SpacingDirection.DOWN;
+import static de.tobiasbielefeld.solitaire.classes.Stack.SpacingDirection.NONE;
+import static de.tobiasbielefeld.solitaire.helper.Preferences.DEFAULT_CURRENT_GAME;
+import static de.tobiasbielefeld.solitaire.helper.Preferences.DEFAULT_MENU_BAR_POSITION_LANDSCAPE;
+import static de.tobiasbielefeld.solitaire.helper.Preferences.DEFAULT_MENU_BAR_POSITION_PORTRAIT;
 
 /**
  * This is like the main activity, handles game input, controls the timer, loads and saves everything
@@ -934,6 +978,7 @@ public class GameManager extends CustomAppCompatActivity implements View.OnTouch
     public void showRestartDialog() {
         try {
             DialogInGameMenu dialogInGameMenu = new DialogInGameMenu();
+            dialogInGameMenu.setAdDialogInteractionListener(listener);
             dialogInGameMenu.show(getSupportFragmentManager(), RESTART_DIALOG);
         } catch (Exception e) {
             Log.e("showRestartDialog: ", e.toString());
@@ -956,6 +1001,7 @@ public class GameManager extends CustomAppCompatActivity implements View.OnTouch
 
         try {
             DialogWon dialogWon = new DialogWon();
+            dialogWon.setAdDialogInteractionListener(listener);
             dialogWon.show(getSupportFragmentManager(), WON_DIALOG);
         } catch (Exception e) {
             Log.e("showWonDialog: ", e.toString());
