@@ -20,14 +20,20 @@ package de.tobiasbielefeld.solitaire.dialogs;
 
 import android.app.Dialog;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AlertDialog;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 
 import de.tobiasbielefeld.solitaire.R;
+import de.tobiasbielefeld.solitaire.ad.AdDialogInteractionListener;
 import de.tobiasbielefeld.solitaire.classes.CustomDialogFragment;
 import de.tobiasbielefeld.solitaire.ui.GameManager;
 
-import static de.tobiasbielefeld.solitaire.SharedData.*;
+import static de.tobiasbielefeld.solitaire.SharedData.gameLogic;
+import static de.tobiasbielefeld.solitaire.SharedData.lg;
+import static de.tobiasbielefeld.solitaire.SharedData.prefs;
+import static de.tobiasbielefeld.solitaire.SharedData.timer;
 
 /**
  * dialog to handle new games or returning to main menu( in that case, cancel the current activity)
@@ -53,6 +59,7 @@ public class DialogInGameMenu extends CustomDialogFragment {
                             } else {
                                 gameLogic.newGame();
                             }
+                            showInterstitialAd();
                             break;
                         case 1:
                             if (prefs.getShowDialogRedeal()) {
@@ -62,6 +69,7 @@ public class DialogInGameMenu extends CustomDialogFragment {
                             } else {
                                 gameLogic.redeal();
                             }
+                            showInterstitialAd();
                             break;
                         case 2:
                             if (gameManager.hasLoaded) {
@@ -76,8 +84,19 @@ public class DialogInGameMenu extends CustomDialogFragment {
                 })
                 .setNegativeButton(R.string.game_cancel, (dialog, id) -> {
                     //just cancel
+                    Log.d("InterstitialAd", "main button cancel");
                 });
 
         return applyFlags(builder.create());
+    }
+
+    private void showInterstitialAd() {
+        listener.onShowAd();
+    }
+
+    private AdDialogInteractionListener listener;
+
+    public void setAdDialogInteractionListener(AdDialogInteractionListener listener) {
+        this.listener = listener;
     }
 }

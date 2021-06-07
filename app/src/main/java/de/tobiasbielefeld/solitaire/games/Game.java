@@ -20,8 +20,10 @@ package de.tobiasbielefeld.solitaire.games;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.support.annotation.CallSuper;
-import android.support.v4.widget.TextViewCompat;
+import androidx.annotation.CallSuper;
+import androidx.core.widget.TextViewCompat;
+
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.RelativeLayout;
 import android.widget.TextView;

@@ -21,9 +21,24 @@ package de.tobiasbielefeld.solitaire.classes;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.WindowManager;
 
+import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+
+import de.tobiasbielefeld.solitaire.ad.AdConfig;
+import de.tobiasbielefeld.solitaire.ad.AdDialogInteractionListener;
 import de.tobiasbielefeld.solitaire.handler.HandlerStopBackgroundMusic;
 import de.tobiasbielefeld.solitaire.helper.LocaleChanger;
 
@@ -36,6 +51,10 @@ import static de.tobiasbielefeld.solitaire.SharedData.*;
  */
 
 public class CustomAppCompatActivity extends AppCompatActivity {
+
+    public static final String INTERSTITIAL_AD_TAG = "InterstitialAd";
+
+    private InterstitialAd mInterstitialAd;
 
     HandlerStopBackgroundMusic handlerStopBackgroundMusic = new HandlerStopBackgroundMusic();
 
@@ -63,6 +82,18 @@ public class CustomAppCompatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         reinitializeData(this);
+
+        loadAd();
+
+        // Set your test devices. Check your logcat output for the hashed device ID to
+        // get test ads on a physical device. e.g.
+        // "Use RequestConfiguration.Builder().setTestDeviceIds(Arrays.asList("ABCDEF012345"))
+        // to get test ads on this device."
+        /*MobileAds.setRequestConfiguration(
+                new RequestConfiguration.Builder()
+                        .setTestDeviceIds(Collections.singletonList("ABCDEF012345"))
+                        .build()
+        );*/
     }
 
     @Override
@@ -109,4 +140,77 @@ public class CustomAppCompatActivity extends AppCompatActivity {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
     }
+
+    public void loadAd() {
+
+        AdRequest adRequest = new AdRequest.Builder().build();
+
+        InterstitialAd.load(this, AdConfig.INTERSTITIAL_AD_UNIT_ID, adRequest, new InterstitialAdLoadCallback() {
+            @Override
+            public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                // The mInterstitialAd reference will be null until
+                // an ad is loaded.
+                mInterstitialAd = interstitialAd;
+                Log.i(INTERSTITIAL_AD_TAG, "onAdLoaded");
+                afterOnAdLoaded();
+            }
+
+            @Override
+            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                // Handle the error
+                Log.i(INTERSTITIAL_AD_TAG, loadAdError.getMessage());
+                mInterstitialAd = null;
+            }
+        });
+
+    }
+
+    public void afterOnAdLoaded() {
+
+    }
+
+    public void showInterstitial() {
+        Log.d(INTERSTITIAL_AD_TAG, "mInterstitialAd = " + mInterstitialAd);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (mInterstitialAd != null) {
+                mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                    @Override
+                    public void onAdDismissedFullScreenContent() {
+                        Log.d(INTERSTITIAL_AD_TAG, "Ad was dismissed.");
+                        // Don't forget to set the ad reference to null so you
+                        // don't show the ad a second time.
+                        mInterstitialAd = null;
+                        loadAd();
+                    }
+
+                    @Override
+                    public void onAdFailedToShowFullScreenContent(AdError adError) {
+                        Log.d(INTERSTITIAL_AD_TAG, "Ad failed to show.");
+                        // Don't forget to set the ad reference to null so you
+                        // don't show the ad a second time.
+                        mInterstitialAd = null;
+                    }
+
+                    @Override
+                    public void onAdShowedFullScreenContent() {
+                        Log.d(INTERSTITIAL_AD_TAG, "Ad showed fullscreen content.");
+                        // Called when ad is dismissed.
+                    }
+                });
+                mInterstitialAd.show(this);
+            }
+        }, 1200);
+    }
+
+    protected final AdDialogInteractionListener listener = new AdDialogInteractionListener() {
+        @Override
+        public void onShowAd() {
+            showInterstitial();
+        }
+
+        @Override
+        public void onCancelAd() {
+
+        }
+    };
 }
